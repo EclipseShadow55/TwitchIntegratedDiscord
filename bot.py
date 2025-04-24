@@ -17,11 +17,11 @@ limitations under the License.
 
 import discord
 from discord.ext import commands
-from commands import Cog, CheckFailure
-import requests
+from discord.ext.commands import Cog
 import json
 from datetime import datetime
 from dotenv import load_dotenv
+import os
 
 load_dotenv()
 
@@ -45,13 +45,15 @@ async def ping(ctx):
     await ctx.respond(f"Pong! Latency is {bot.latency}")
 
 so_opts = {"no-link": "Removes the link to the channel from the bot's reply",
-           "no-thumb": "Removes the thumbnail (if the channel is live) from the bot's reply",
-           "no-status": "Removes the live status from the bot's reply",
-           "no-bio": "Removes the channel's bio from the bot's reply",
-          }
+    "no-thumb": "Removes the thumbnail (if the channel is live) from the bot's reply",
+    "no-status": "Removes the live status from the bot's reply",
+    "no-bio": "Removes the channel's bio from the bot's reply",
+}
 
-status_opts = {"no-link": "Removes the link to the channel from the bot's reply",
-               "no-thumb": "Removes the thumbnail (if the channel is live) from the bot's reply"
+status_opts = {
+    "no-link": "Removes the link to the channel from the bot's reply",
+    "no-thumb": "Removes the thumbnail (if the channel is live) from the bot's reply"
+}
 
 so_desc = ["`/so [twitch-username] [options]`: shouts out a twitch channel",
            "  Options:"] + \
@@ -64,14 +66,14 @@ status_desc = ["`/status [twitch-username] [options]`: gets the live status of a
 all_desc = ["## Commands:"] + \
            ["  - " + so_desc[0]] + \
            ["  " + item for item in so_desc[1:]] + \
-           ["  - " + ls_desc[0]] + \
+           ["  - " + status_desc[0]] + \
            ["  " + item for item in status_desc[1:]]
 
 class TwitchIntegrationCog(Cog):
 	def __init__(self, bot):
 		self.bot = bot
     
-	@commands.slash_command("Command descriptions and info")
+	@discord.slash_command("Command descriptions and info")
     @discord.option("command", type=str, choices=["all", "/so", "/status"], default="all")
 	async def help(ctx, command: str):
         match command:
@@ -82,28 +84,25 @@ class TwitchIntegrationCog(Cog):
             case "/status":
                 ctx.send("\n".join(status_desc))
             case _:
-                ctx.send(f"No command found with name \"{args[0]}\"")
+                ctx.send(f"No command found with name \"{command}\"")
         print(f"{datetime.now().toisoformat()} Guild: {ctx.guild.name} | !help command called with parameter \"{command}\"\n")
 			
-	@commands.slash_command("Shouts out a twitch channel")
+	@discord.slash_command("Shouts out a twitch channel")
 	@discord.option("username", type=str, description="The twitch channel to shoutout")
-    @discord.option("options", type=str, description="\n".join(["One or more of these seperated by spaces:",
-                                                                ",".join([key for key in so_opts]),
-                                                                "`/help /so` for more info"]),
+    @discord.option("options", type=str, description="\n".join(["One or more of these seperated by spaces:",\
+                                                                ",".join([key for key in so_opts]),\
+                                                                "`/help /so` for more info"]),\
                     default="")
-    commands.is_admin()
+    @commands.is_admin()
 	async def so(ctx, username: str, options: str):
         options = [item for item in options.split() if item in so_opts]
         # TODO: Implement logic for getting stream / channel info
         print(f"{datetime.now().toisoformat()} Guild: {ctx.guild.name} | !so command called with username \"{username}\" and options \"{options}\"\n")
 	
-	@commands.slash_command(description="Checks the live status of a twitch channel")
+	@discord.slash_command(description="Checks the live status of a twitch channel")
     @discord.option("username", type=str, description="The twitch channel to check the live-status of")
-    @discord.option("options", type=str, description="\n".join(["One or more of these seperated by spaces:",
-                                                                ",".join([key for key in status_opts]),
-                                                                "`/help /status` for more info"]),
-                    default="")
-    commands.is_admin()
+    @discord.option("options", type=str, description="\n".join(["One or more of these seperated by spaces:", ",".join([key for key in status_opts]), "`/help /status` for more info"]), default="")
+    @commands.is_admin()
 	async def status(ctx, username: str, options: str):
 		options = [item for item in options.split() if item in status_opts]
         # TODO: Implement logic for getting channel status
